@@ -1,0 +1,16 @@
+
+*/*-itrOut
+*/arxiv
+*/dataset
+*/.*
+*/*.ipynb
+*/.ipynb_checkpoints
+*/*.pyc
+*/__*
+*/*.sh
+*.sh
+*/atten-logs
+*/figure
+*/*.npy
+*/*.h5
+
