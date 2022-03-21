@@ -1,0 +1,22 @@
+
+dataset:
+  norm: True
+  dkey: 'sino'
+  vh5:  'dataset/ds-simu-valid.h5'
+  th5:  'dataset/ds-simu-train.h5'
+  load2ram: False
+
+train:
+  mbsz: 128
+  maxep: 2
+  lr: 0.001
+  ckp_steps: 1
+
+model:
+  enc_emb_dim: 256
+  dec_emb_dim: 256
+  enc_nlayer: 8
+  enc_nhead: 16
+  dec_nlayer: 2
+  dec_nhead: 16
+  mask_ratio: 0.5

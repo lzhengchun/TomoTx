@@ -1,0 +1,22 @@
+
+dataset:
+  norm: True
+  dkey: 'sino'
+  vh5:  'dataset/aapm-valid.h5'
+  th5:  'dataset/aapm-train.h5'
+  load2ram: True
+
+train:
+  mbsz: 128
+  maxep: 1000
+  lr: 0.001
+  ckp_steps: 10
+
+model:
+  enc_emb_dim: 1024
+  dec_emb_dim: 512
+  enc_nlayer: 6
+  dec_nlayer: 4
+  enc_nhead: 16
+  dec_nhead: 16
+  mask_ratio: 0.8

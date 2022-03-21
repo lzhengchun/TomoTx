@@ -1,0 +1,24 @@
+
+dataset:
+  norm: True
+  mean4norm: 40318.352093554684
+  std4norm: 12116.158272403676
+  dkey: 'sino'
+  vh5:  'dataset/ds-simu-valid.h5'
+  th5:  'dataset/ds-simu-train.h5'
+  load2ram: True
+
+train:
+  mbsz: 128
+  maxep: 1000
+  lr: 0.002
+  ckp_steps: 5
+
+model:
+  enc_emb_dim: 512
+  dec_emb_dim: 256
+  enc_nlayer: 16
+  dec_nlayer: 5
+  enc_nhead: 16
+  dec_nhead: 16
+  mask_ratio: 0.3

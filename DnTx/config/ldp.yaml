@@ -1,0 +1,27 @@
+# 180, 574
+dataset:
+  ldfactor: 0.05
+  dkey: 'sino'
+  vh5:  '/homes/zhengchun.liu/SinoTx/dataset/ldp-valid.h5'
+  th5:  '/homes/zhengchun.liu/SinoTx/dataset/ldp-train.h5'
+  inorm: 
+    norm: True
+  onorm: 
+    norm: True
+    std4norm: 19314.79102362229
+    mean4norm: 23223.569339641806
+
+train:
+  mbsz: 32
+  maxep: 500
+  lr: 0.001
+  ckp_steps: 10
+
+model:
+  enc_emb_dim: 574
+  dec_emb_dim: 574
+  enc_nlayer: 4
+  dec_nlayer: 4
+  enc_nhead: 2
+  dec_nhead: 2
+  mask_ratio: 0.0

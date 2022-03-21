@@ -1,0 +1,36 @@
+
+# configuration for the dataset from an AAPM GC
+# sinogram shape: 128, 1024
+# image shape: 512, 512
+# only 3600 for training and 400 for validation 
+dataset:
+  inorm: 
+    norm: True
+    mean4norm: 2.25176
+    std4norm:  1.0627558
+  onorm: 
+    norm: True
+    mean4norm: 0.12593827
+    std4norm:  0.09840989
+  inpput_key: 'sino'
+  target_key: 'image'
+  vh5:  'dataset/dls-valid.h5'
+  th5:  'dataset/dls-train.h5'
+  load2ram: True
+
+train:
+  mbsz: 32
+  maxep: 500
+  lr: 0.001
+  ckp_steps: 10
+
+model:
+  enc_emb_dim: 1024
+  dec_emb_dim: 512
+  out_dim: 256
+  out_seqlen: 1024
+  enc_nlayer: 24
+  dec_nlayer: 16
+  enc_nhead: 16
+  dec_nhead: 16
+  mask_ratio: 0.1

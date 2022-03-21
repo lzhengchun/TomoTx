@@ -1,0 +1,31 @@
+dataset:
+  inorm: 
+    norm: True
+    mean4norm: 40318.352093554684
+    std4norm:  12116.158272403676
+  onorm: 
+    norm: True
+    mean4norm: 151.61659421539306
+    std4norm:  96.9558483437573
+  inpput_key: 'sino'
+  target_key: 'image'
+  vh5:  '/homes/zhengchun.liu/SinoTx/dataset/ds-simu-valid.h5'
+  th5:  '/homes/zhengchun.liu/SinoTx/dataset/ds-simu-train.h5'
+  load2ram: True
+
+train:
+  mbsz: 128
+  maxep: 500
+  lr: 0.001
+  ckp_steps: 10
+
+model:
+  enc_emb_dim: 256
+  dec_emb_dim: 256
+  out_dim: 256
+  out_seqlen: 256
+  enc_nlayer: 8
+  dec_nlayer: 8
+  enc_nhead: 16
+  dec_nhead: 16
+  mask_ratio: 0.8

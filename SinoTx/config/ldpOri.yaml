@@ -1,0 +1,24 @@
+
+dataset:
+  norm: True
+  std4norm: 0.0229378
+  mean4norm: 0.031104084
+  dkey: 'sino'
+  vh5:  'dataset/lpd-valid.h5'
+  th5:  'dataset/lpd-train.h5'
+  load2ram: True
+
+train:
+  mbsz: 32
+  maxep: 1000
+  lr: 0.001
+  ckp_steps: 10
+
+model:
+  enc_emb_dim: 1024
+  dec_emb_dim: 512
+  enc_nlayer: 16
+  dec_nlayer: 8
+  enc_nhead: 16
+  dec_nhead: 16
+  mask_ratio: 0.8

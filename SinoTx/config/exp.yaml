@@ -1,0 +1,22 @@
+
+dataset:
+  norm: False # data have been standardized when pre-proc
+  dkey: 'sino'
+  vh5:  '/lambda_stor/data/zliu/sinos/exp-sssinos-valid.h5'
+  th5:  '/lambda_stor/data/zliu/sinos/exp-sssinos-train.h5'
+  load2ram: True
+
+train:
+  mbsz: 128
+  maxep: 500
+  lr: 0.003
+  ckp_steps: 20
+
+model:
+  enc_emb_dim: 1024
+  dec_emb_dim: 1024
+  enc_nlayer: 6
+  dec_nlayer: 4
+  enc_nhead: 16
+  dec_nhead: 16
+  mask_ratio: 0.2

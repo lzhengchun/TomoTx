@@ -1,0 +1,35 @@
+# this is a low dose, real patient image, GT reconstruction is not very well though 
+# sinogram has shape of 1000, 513, and the image has shape of 360, 360
+# 32256 for training, 
+
+dataset:
+  inorm: 
+    norm: True
+    mean4norm: 0.030294647
+    std4norm:  0.022565003
+  onorm: 
+    norm: True
+    mean4norm: 0.16435115
+    std4norm:  0.115162216
+  inpput_key: 'sino'
+  target_key: 'image'
+  vh5:  'dataset/ldp-valid.h5'
+  th5:  'dataset/ldp-train.h5'
+  load2ram: True
+
+train:
+  mbsz: 32
+  maxep: 500
+  lr: 0.001
+  ckp_steps: 10
+
+model:
+  enc_emb_dim: 512
+  dec_emb_dim: 256
+  out_dim: 100
+  out_seqlen: 1296
+  enc_nlayer: 16
+  dec_nlayer: 16
+  enc_nhead: 16
+  dec_nhead: 16
+  mask_ratio: 0.1

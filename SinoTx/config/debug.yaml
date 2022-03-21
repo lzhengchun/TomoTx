@@ -1,0 +1,22 @@
+
+dataset:
+  norm: False
+  dkey: 'Ypdf'
+  vh5:  'dataset/ds-valid-debug.h5'
+  th5:  'dataset/ds-train-debug.h5'
+  load2ram: True
+
+train:
+  mbsz: 128
+  maxep: 500
+  lr: 0.001
+  ckp_steps: 10
+
+model:
+  enc_emb_dim: 512
+  dec_emb_dim: 256
+  enc_nlayer: 16
+  dec_nlayer: 5
+  enc_nhead: 16
+  dec_nhead: 16
+  mask_ratio: 0.8

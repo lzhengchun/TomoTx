@@ -1,0 +1,24 @@
+
+dataset:
+  norm: True
+  std4norm: 19314.79102362229
+  mean4norm: 23223.569339641806
+  dkey: 'sino' # n, 180, 574
+  vh5:  'dataset/ldp-valid.h5'
+  th5:  'dataset/ldp-train.h5'
+  load2ram: True
+
+train:
+  mbsz: 32
+  maxep: 500
+  lr: 0.001
+  ckp_steps: 10
+
+model:
+  enc_emb_dim: 574
+  dec_emb_dim: 574
+  enc_nlayer: 4
+  dec_nlayer: 4
+  enc_nhead: 2 # dim should be divisible by num_heads
+  dec_nhead: 2
+  mask_ratio: 0.8
