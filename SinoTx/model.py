@@ -11,7 +11,7 @@ class SinoTx(torch.nn.Module):
         mdl_cfg = params['model']
         self.enc_emb_dim = mdl_cfg['enc_emb_dim']
         self.dec_emb_dim = mdl_cfg['dec_emb_dim']
-        self.mask_ratio = mdl_cfg['mask_ratio']
+        self.mask_ratio  = mdl_cfg['mask_ratio']
         
         # encoder specifics
         self.cls_token   = torch.nn.Parameter(torch.zeros(1, 1, self.enc_emb_dim), requires_grad=True)
@@ -102,6 +102,7 @@ class SinoTx(torch.nn.Module):
 
         return x_masked, mask, ids_restore
     
+    # this is to mimic sparse view
     def uniform_masking(self, x):
         N, L, D = x.shape  # batch, length, dim
 
@@ -114,21 +115,7 @@ class SinoTx(torch.nn.Module):
         ids_restore = torch.argsort(torch.cat([ids_keep, masked_ids]))
         return x_masked, mask.repeat(N, 1), ids_restore.repeat(N, 1)
 
-    def limitted_view_mask(self, x):
-        N, L, D = x.shape  # batch, length, dim
-        if self.mask_ratio >= 0:
-            ids_keep = torch.arange(round(self.mask_ratio*L), L,   device=x.device)
-        else:
-            ids_keep = torch.arange(0, L+round(self.mask_ratio*L), device=x.device)
-            
-        x_masked = torch.gather(x, dim=1, index=ids_keep.repeat(N, 1).unsqueeze(-1).repeat(1, 1, D))
-        
-        mask = torch.ones(L, device=x.device)
-        mask.index_fill_(0, ids_keep, 0)
-        masked_ids  = torch.masked_select(torch.arange(0, L, device=x.device), mask==1)
-        ids_restore = torch.argsort(torch.cat([ids_keep, masked_ids]))
-        return x_masked, mask.repeat(N, 1), ids_restore.repeat(N, 1)
-
+    # mimic missing wedge, limitted-view
     def missing_wedge_mask(self, x):
         N, L, D = x.shape  # batch, length, dim
         mw = round(self.mask_ratio*L)
@@ -157,7 +144,6 @@ class SinoTx(torch.nn.Module):
         # masking: length -> length * mask_ratio
         _tmp, mask, ids_restore = self.random_masking(_tmp)
         # _tmp, mask, ids_restore = self.uniform_masking(_tmp)
-        # _tmp, mask, ids_restore = self.limitted_view_mask(_tmp)
         # _tmp, mask, ids_restore = self.missing_wedge_mask(_tmp)
 
         # append cls token

@@ -1,0 +1,19 @@
+
+dataset:
+  norm: True
+  mean4norm: 157.34849548339844
+  std4norm: 103.71063995361328
+  xkey: 'sparse_view'
+  ykey: 'full_view'
+  vh5:  'dataset/simu-valid-0p8.h5'
+  th5:  'dataset/simu-train-0p8.h5'
+  load2ram: True
+
+train:
+  mbsz: 128
+  psz: 128
+  maxep: 200
+  lr: 0.001
+  ckp_steps: 10
+
+# model:

@@ -9,7 +9,6 @@ from data import SinogramDataset
 import numpy as np
 import logging
 from torch.utils.data import DataLoader
-
 from torch.nn.parallel import DistributedDataParallel as DDP
 
 parser = argparse.ArgumentParser(description='SinoTx')
@@ -19,7 +18,6 @@ parser.add_argument('-cfg',    type=str, required=True, help='path to config yam
 parser.add_argument('-verbose',type=int, default=1, help='1:print to terminal; 0: redirect to file')
 
 def main(args):
-    # env and log init
     local_rank = int(os.environ["LOCAL_RANK"])
     rank = int(os.environ["RANK"])
     world_size = int(os.environ["WORLD_SIZE"])
@@ -62,11 +60,9 @@ def main(args):
         logging.info(f"%d samples, {valid_ds.shape},  will be used for validation" % (len(valid_ds), ))
 
     model = SinoTx(seqlen=train_ds.seqlen, in_dim=train_ds.cdim, params=params).cuda()
-
     model = DDP(model, device_ids=[local_rank], output_device=local_rank, find_unused_parameters=False)
 
     optimizer = torch.optim.AdamW(model.parameters(), lr=params['train']['lr'], betas=(0.9, 0.95))
-
     lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=100, gamma=0.4, verbose=rank==0)
 
     logging.info(f"rank {rank} Start training ...")
@@ -98,7 +94,7 @@ def main(args):
         logging.info(_prints)
 
         if ep % params['train']['ckp_steps'] != 0: continue
-        
+
         save2img(imgs_val[-1].numpy().squeeze(), '%s/ep%05d-valid-gt.tiff' % (itr_out_dir, ep))
         restore_and_save2tiff(pred=_vpred[-1].cpu().numpy().squeeze(), ori=imgs_val[-1].numpy().squeeze(), \
                               mask=_vmask[-1].cpu().numpy(), fn='%s/ep%05d-valid-pd.tiff' % (itr_out_dir, ep))
@@ -108,6 +104,7 @@ def main(args):
                               mask=mask[-1].cpu().numpy(), fn='%s/ep%05d-train-pd.tiff' % (itr_out_dir, ep))
 
         torch.save(model.module.state_dict(), "%s/mdl-ep%05d.pth" % (itr_out_dir, ep))
+        # torch.jit.save(torch.jit.trace(model, (imgs_tr[:1].cuda(), 0.7)), "%s/script-ep%05d.pth" % (itr_out_dir, ep))
         with open(f'{itr_out_dir}/config.yaml', 'w') as fp:
             yaml.dump(params, fp)
 

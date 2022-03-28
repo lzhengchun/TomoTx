@@ -10,7 +10,7 @@ dataset:
 
 train:
   mbsz: 128
-  maxep: 1000
+  maxep: 200
   lr: 0.001
   ckp_steps: 10
 

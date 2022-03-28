@@ -80,47 +80,13 @@ class DnTx(torch.nn.Module):
             torch.nn.init.constant_(m.bias, 0)
             torch.nn.init.constant_(m.weight, 1.0)
 
-    def random_masking(self, x):
-        N, L, D = x.shape  # batch, length, dim (a.k.a. BNC)
-        len_keep = int(L * (1 - self.mask_ratio))
-        
-        noise = torch.rand(N, L, device=x.device)  # noise in [0, 1]
-        
-        # sort noise for each sample
-        ids_shuffle = torch.argsort(noise, dim=1)  # ascend: small is keep, large is remove
-        ids_restore = torch.argsort(ids_shuffle, dim=1)
-
-        # keep the first subset
-        ids_keep = ids_shuffle[:, :len_keep]
-        x_masked = torch.gather(x, dim=1, index=ids_keep.unsqueeze(-1).repeat(1, 1, D))
-
-        # generate the binary mask: 0 is keep, 1 is remove
-        mask = torch.ones([N, L], device=x.device)
-        mask[:, :len_keep] = 0
-        # unshuffle to get the binary mask
-        mask = torch.gather(mask, dim=1, index=ids_restore)
-
-        return x_masked, mask, ids_restore
-    
-    def uniform_masking(self, x):
-        N, L, D = x.shape  # batch, length, dim
-
-        ids_keep = torch.linspace(0, L-1, L-round(self.mask_ratio*L), device=x.device).round().long()
-        x_masked = torch.gather(x, dim=1, index=ids_keep.repeat(N, 1).unsqueeze(-1).repeat(1, 1, D))
-        
-        mask = torch.ones(L, device=x.device)
-        mask.index_fill_(0, ids_keep, 0)
-        masked_ids  = torch.masked_select(torch.arange(0, L, device=x.device), mask==1)
-        ids_restore = torch.argsort(torch.cat([ids_keep, masked_ids]))
-        return x_masked, mask.repeat(N, 1), ids_restore.repeat(N, 1)
-
     def limitted_view_mask(self, x):
         N, L, D = x.shape  # batch, length, dim
         if self.mask_ratio >= 0:
             ids_keep = torch.arange(round(self.mask_ratio*L), L,   device=x.device)
         else:
             ids_keep = torch.arange(0, L+round(self.mask_ratio*L), device=x.device)
-            
+
         x_masked = torch.gather(x, dim=1, index=ids_keep.repeat(N, 1).unsqueeze(-1).repeat(1, 1, D))
         
         mask = torch.ones(L, device=x.device)
@@ -136,8 +102,7 @@ class DnTx(torch.nn.Module):
         _tmp = _emb + self.enc_pos_emb[:, 1:, :]
 
         # masking: length -> length * mask_ratio
-        # _tmp, mask, ids_restore = self.random_masking(_tmp)
-        # _tmp, mask, ids_restore = self.uniform_masking(_tmp)
+        # nothing to mask in this case, just a placeholder, mr=0, to unify implementations
         _tmp, mask, ids_restore = self.limitted_view_mask(_tmp)
 
         # append cls token

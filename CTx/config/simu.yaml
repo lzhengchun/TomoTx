@@ -9,8 +9,8 @@ dataset:
     std4norm:  96.9558483437573
   inpput_key: 'sino'
   target_key: 'image'
-  vh5:  '/homes/zhengchun.liu/SinoTx/dataset/ds-simu-valid.h5'
-  th5:  '/homes/zhengchun.liu/SinoTx/dataset/ds-simu-train.h5'
+  vh5:  '/homes/zhengchun.liu/TomoTx/SinoTx/dataset/ds-simu-valid.h5'
+  th5:  '/homes/zhengchun.liu/TomoTx/SinoTx/dataset/ds-simu-train.h5'
   load2ram: True
 
 train:
@@ -20,10 +20,10 @@ train:
   ckp_steps: 10
 
 model:
-  enc_emb_dim: 256
-  dec_emb_dim: 256
-  out_dim: 256
-  out_seqlen: 256
+  enc_emb_dim: 256 # 
+  dec_emb_dim: 256 # 
+  out_dim: 256     # eq. to 16x16
+  out_seqlen: 256  # eq. to number of patches
   enc_nlayer: 8
   dec_nlayer: 8
   enc_nhead: 16

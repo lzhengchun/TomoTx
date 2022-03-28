@@ -115,6 +115,26 @@ class CTx(torch.nn.Module):
         ids_restore = torch.argsort(torch.cat([ids_keep, masked_ids]))
         return x_masked, mask.repeat(N, 1), ids_restore.repeat(N, 1)
 
+    # mimic missing wedge, limitted-view
+    def missing_wedge_mask(self, x):
+        N, L, D = x.shape  # batch, length, dim
+        mw = round(self.mask_ratio*L)
+        
+        mseqs = torch.randint(low=0, high=L-mw, size=(N, ), device=x.device)
+        
+        ids_keep = torch.cat([torch.cat([torch.arange(0, mseqs[n], device=x.device), \
+                                        torch.arange(mseqs[n]+mw, L, device=x.device)])[None] for n in range(N)], axis=0)
+        masked_ids = torch.cat([torch.arange(mseqs[n], mseqs[n]+mw, device=x.device)[None] for n in range(N)], axis=0)
+
+        x_masked = torch.gather(x, dim=1, index=ids_keep.unsqueeze(-1).repeat(1, 1, D))
+
+        mask = torch.ones((N, L), device=x.device)
+        
+        mask[torch.arange(mask.size(0)).unsqueeze(1), ids_keep] = 0
+
+        ids_restore = torch.argsort(torch.cat([ids_keep, masked_ids], axis=1))
+        return x_masked, mask, ids_restore
+
     def unpatchify(self, x):
         """
         x: (N, L, patch_size**2 * 1)
