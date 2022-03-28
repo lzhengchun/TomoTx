@@ -13,4 +13,5 @@
 */figure
 */*.npy
 */*.h5
-
+*.ipynb
+*/*.log

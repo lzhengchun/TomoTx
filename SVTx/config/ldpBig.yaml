@@ -1,0 +1,24 @@
+
+dataset:
+  norm: True
+  std4norm: 19314.79102362229
+  mean4norm: 23223.569339641806
+  dkey: 'sino' # n, 180, 574
+  vh5:  '/homes/zhengchun.liu/TomoTx/SinoTx/dataset/ldp-valid.h5'
+  th5:  '/homes/zhengchun.liu/TomoTx/SinoTx/dataset/ldp-train.h5'
+  load2ram: True
+
+train:
+  mbsz: 128
+  maxep: 500
+  lr: 0.001
+  ckp_steps: 10
+
+model:
+  enc_emb_dim: 2048
+  dec_emb_dim: 2048
+  enc_nlayer: 24
+  dec_nlayer: 16
+  enc_nhead: 16
+  dec_nhead: 16 # dim should be divisible by num_heads
+  mask_ratio: 0.6
