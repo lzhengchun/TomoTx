@@ -1,4 +1,4 @@
-import torch 
+import torch, logging
 import numpy as np
 from transformer import Block
 
@@ -80,15 +80,14 @@ class DnTx(torch.nn.Module):
             torch.nn.init.constant_(m.bias, 0)
             torch.nn.init.constant_(m.weight, 1.0)
 
-    def limitted_view_mask(self, x):
+    def placeholder_mask(self, x):
         N, L, D = x.shape  # batch, length, dim
-        if self.mask_ratio >= 0:
-            ids_keep = torch.arange(round(self.mask_ratio*L), L,   device=x.device)
-        else:
-            ids_keep = torch.arange(0, L+round(self.mask_ratio*L), device=x.device)
+        if self.mask_ratio != 0:
+            logging.warning(f"the masking ratio is supposed to be 0, but get {self.mask_ratio} instead, will treat as 0.")
+        ids_keep = torch.arange(0, L,   device=x.device)
 
         x_masked = torch.gather(x, dim=1, index=ids_keep.repeat(N, 1).unsqueeze(-1).repeat(1, 1, D))
-        
+
         mask = torch.ones(L, device=x.device)
         mask.index_fill_(0, ids_keep, 0)
         masked_ids  = torch.masked_select(torch.arange(0, L, device=x.device), mask==1)
@@ -103,7 +102,7 @@ class DnTx(torch.nn.Module):
 
         # masking: length -> length * mask_ratio
         # nothing to mask in this case, just a placeholder, mr=0, to unify implementations
-        _tmp, mask, ids_restore = self.limitted_view_mask(_tmp)
+        _tmp, mask, ids_restore = self.placeholder_mask(_tmp)
 
         # append cls token
         cls_token  = self.cls_token + self.enc_pos_emb[:, :1, :]
