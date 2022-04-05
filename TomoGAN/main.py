@@ -15,12 +15,12 @@ parser.add_argument('-verbose',type=int, default=1, help='1:print to terminal; 0
 def main(args, logdir):
     params = yaml.load(open(args.cfg, 'r'), Loader=yaml.CLoader)
     logging.info("[%.3f] loading data into CPU memory, it will take a while ... ..." % (time.time(), ))
-    ds_train = DnDataset(ih5=params['dataset']['th5'], params=params)
+    ds_train = DnDataset(ifn=params['dataset']['th5'], params=params)
     dl_train = DataLoader(dataset=ds_train, batch_size=params['train']['mbsz'], shuffle=True,\
                           num_workers=4, prefetch_factor=params['train']['mbsz'], drop_last=True, pin_memory=True)
     logging.info(f"loaded %d samples, {ds_train.dim}, into CPU memory for training." % (len(ds_train), ))
 
-    ds_valid = DnDataset(ih5=params['dataset']['vh5'], params=params)
+    ds_valid = DnDataset(ifn=params['dataset']['vh5'], params=params)
     dl_valid = DataLoader(dataset=ds_valid, batch_size=params['train']['mbsz'], shuffle=True, \
                           num_workers=8, prefetch_factor=params['train']['mbsz'], drop_last=False, pin_memory=True)
     logging.info(f"loaded %d samples, {ds_valid.dim}, into CPU memory for validation." % (len(ds_valid), ))

@@ -5,7 +5,7 @@ import sys, skimage.metrics, argparse, glob
 import numpy as np
 import pandas as pd
 from data import SinogramDataset
-from model import CTx
+from model import SVTx
 
 def denorm(a, mean, std):
     return a * std  + mean
@@ -25,7 +25,7 @@ if __name__ == "__main__":
         print('Unrecognized argument(s): \n%s \nProgram exiting ... ... ' % '\n'.join(unparsed))
         exit(0)
 
-    logging.basicConfig(filename=f"CTx-qeva.log", level=logging.DEBUG)
+    logging.basicConfig(filename=f"SVTx-qeva.log", level=logging.DEBUG)
     if args.verbose:
         logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
 
@@ -35,7 +35,7 @@ if __name__ == "__main__":
     valid_ds = SinogramDataset(ifn=params['dataset']['vh5'], params=params)
     valid_dl = torch.utils.data.DataLoader(valid_ds, batch_size=args.mbsz, drop_last=False, shuffle=False)
 
-    model = CTx(in_seqlen=valid_ds.in_seqlen, in_dim=valid_ds.in_cdim, params=params)
+    model = SVTx(seqlen=valid_ds.seqlen, in_dim=valid_ds.cdim, params=params)
     if len(args.ckpt) > 0:
         ckpt = args.ckpt
     else:
@@ -46,29 +46,30 @@ if __name__ == "__main__":
     for key, p in model.named_parameters(): p.requires_grad = False
     model = model.to(torch_dev)
 
-    theta = np.linspace(0., 180., valid_ds.in_shape[-2], endpoint=False)
+    theta = np.linspace(0., 180., valid_ds.seqlen, endpoint=False)
     ssim_sv, ssim_pd, psnr_sv, psnr_pd = [], [], [], []
-    for sinos, imags in valid_dl:
-        _vpred, _vmask = model.forward(sinos.to(torch_dev), mask_ratio=args.mr)
-        _vpred = denorm(_vpred.cpu().numpy()[:,0], std=params['dataset']['onorm']['std4norm'], \
-                        mean=params['dataset']['onorm']['mean4norm'])
+    for sinos in valid_dl:
+        _, _vpred, _vmask = model.forward(sinos.to(torch_dev), mask_ratio=args.mr)
+        sinos  = denorm(sinos[:,0].numpy(), std=params['dataset']['std4norm'], \
+                        mean=params['dataset']['mean4norm'])
+        _vpred = denorm(_vpred.cpu().numpy(), std=params['dataset']['std4norm'], \
+                        mean=params['dataset']['mean4norm'])
         _vmask = _vmask.cpu().numpy()
-        _imags = denorm(imags.numpy()[:,0], std=params['dataset']['onorm']['std4norm'], \
-                        mean=params['dataset']['onorm']['mean4norm'])
-        sinos  = denorm(sinos[:,0].numpy(), std=params['dataset']['inorm']['std4norm'], \
-                        mean=params['dataset']['inorm']['mean4norm'])
+        _vpred[_vmask==0] = sinos[_vmask==0] # restore
+
         for n in range(_vmask.shape[0]):
-            recon_sv = skimage.transform.iradon(sinos[n][_vmask[n]==0].T, \
-                                                theta=theta[_vmask[n]==0])
+            recon_sv = skimage.transform.iradon(sinos[n][_vmask[n]==0].T, theta=theta[_vmask[n]==0])
+
+            recon_pd = skimage.transform.iradon(_vpred[n].T, theta=theta)
+
             recon_fv = skimage.transform.iradon(sinos[n].T,  theta=theta)
 
-            # dr = _imags[n].max() - _imags[n].min()
             dr = recon_fv.max() - recon_fv.min()
             ssim_sv.append(skimage.metrics.structural_similarity(recon_fv, recon_sv, data_range=dr))
-            ssim_pd.append(skimage.metrics.structural_similarity(_imags[n], _vpred[n], data_range=dr)) # CTx was trained to match gt, not fv
+            ssim_pd.append(skimage.metrics.structural_similarity(recon_fv, recon_pd, data_range=dr))
 
             psnr_sv.append(skimage.metrics.peak_signal_noise_ratio(recon_fv, recon_sv, data_range=dr))
-            psnr_pd.append(skimage.metrics.peak_signal_noise_ratio(_imags[n], _vpred[n], data_range=dr))
+            psnr_pd.append(skimage.metrics.peak_signal_noise_ratio(recon_fv, recon_pd, data_range=dr))
         break
 
     pd.DataFrame(np.vstack([ssim_sv, ssim_pd, psnr_sv, psnr_pd]).T, \

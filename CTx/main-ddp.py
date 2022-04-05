@@ -1,4 +1,3 @@
-#! /homes/zhengchun.liu/usr/miniconda3/envs/hvd/bin/python
 
 # torchrun --standalone --nnodes=1 --nproc_per_node=8  ./main-ddp.py -cfg=config/simu.yaml -expName=simu
 
@@ -9,10 +8,12 @@ from data import SinogramDataset
 import numpy as np
 import logging
 from torch.utils.data import DataLoader
-
 from torch.nn.parallel import DistributedDataParallel as DDP
 
-parser = argparse.ArgumentParser(description='SinoTx')
+sys.path.insert(1, os.path.join(sys.path[0], '..'))
+from SinoTx.model import SinoTxEnc
+
+parser = argparse.ArgumentParser(description='CTx')
 parser.add_argument('-gpus',   type=str, default="", help='list of visiable GPUs')
 parser.add_argument('-expName',type=str, default="debug", help='Experiment name')
 parser.add_argument('-cfg',    type=str, required=True, help='path to config yaml file')
@@ -36,7 +37,7 @@ def main(args):
         os.mkdir(itr_out_dir) # to save temp output
     torch.distributed.barrier()
 
-    logging.basicConfig(filename=f"{args.expName}-itrOut/SinoTx.log", level=logging.DEBUG)
+    logging.basicConfig(filename=f"{args.expName}-itrOut/CTx.log", level=logging.DEBUG)
     if args.verbose:
         logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
 
@@ -48,7 +49,6 @@ def main(args):
 
     logging.info(f"rank {rank} Init training dataset ...")
     train_ds = SinogramDataset(ifn=params['dataset']['th5'], params=params, world_size=world_size, rank=rank)
-    # train_sampler = torch.utils.data.distributed.DistributedSampler(train_ds, num_replicas=world_size, rank=rank)
     train_dl = DataLoader(train_ds, batch_size=params['train']['mbsz']//world_size, num_workers=4, \
                           prefetch_factor=params['train']['mbsz'], pin_memory=True, \
                           drop_last=True, shuffle=True)
@@ -62,22 +62,30 @@ def main(args):
                               drop_last=False, shuffle=False)
         logging.info(f"{valid_ds.len} samples, {valid_ds.in_shape} and {valid_ds.out_shape},  will be used for validation")
 
-    model = CTx(in_seqlen=train_ds.in_seqlen,   in_dim=train_ds.in_cdim, params=params).cuda()
+    enc_model = SinoTxEnc(train_ds.in_seqlen, in_dim=train_ds.in_cdim, params=params).cuda()
+    # enc_model.load_state_dict(torch.load(params['model']['enc_weights'], map_location=torch.device('cuda')))
+    # for p in enc_model.parameters(): p.requires_grad = False
+    enc_model = DDP(enc_model, device_ids=[local_rank], output_device=local_rank, find_unused_parameters=False)
 
-    model = DDP(model, device_ids=[local_rank], output_device=local_rank, find_unused_parameters=False)
+    CTx_dec = CTx(params=params).cuda()
+    CTx_dec = DDP(CTx_dec, device_ids=[local_rank], output_device=local_rank, find_unused_parameters=False)
 
     criterion = torch.nn.MSELoss()
-    optimizer = torch.optim.AdamW(model.parameters(), lr=params['train']['lr'], betas=(0.9, 0.95))
+    optimizer_enc = torch.optim.AdamW(enc_model.parameters(), lr=params['train']['lr'], betas=(0.9, 0.95))
+    optimizer_dec = torch.optim.AdamW(CTx_dec.parameters(),   lr=params['train']['lr'], betas=(0.9, 0.95))
 
     logging.info(f"rank {rank} Start training ...")
     for ep in range(1, params['train']['maxep']+1):
         train_ep_tick = time.time()
         for sinos_tr, imgs_tr in train_dl: 
-            optimizer.zero_grad()
-            pred, mask = model.forward(sinos_tr.cuda())
+            optimizer_enc.zero_grad()
+            optimizer_dec.zero_grad()
+            latent, mask, ids_restore = enc_model.forward(sinos_tr.cuda())
+            pred = CTx_dec.forward(latent, ids_restore)
             loss = criterion(pred, imgs_tr.cuda())
             loss.backward()
-            optimizer.step()
+            optimizer_enc.step()
+            optimizer_dec.step()
 
         if rank != world_size-1: continue
 
@@ -89,8 +97,9 @@ def main(args):
         val_loss = []
         valid_ep_tick = time.time()
         for sinos_val, imgs_val in valid_dl:
+            latent, _vmask, ids_restore = enc_model.forward(sinos_val.cuda())
             with torch.no_grad():
-                _vpred, _vmask = model.forward(sinos_val.cuda())
+                _vpred = CTx_dec.forward(latent, ids_restore)
                 _vloss = torch.nn.functional.mse_loss(_vpred, imgs_val.cuda())
                 val_loss.append(_vloss.cpu().numpy())
 
@@ -99,14 +108,14 @@ def main(args):
         logging.info(_prints)
 
         if ep % params['train']['ckp_steps'] != 0: continue
-        
         save2img(imgs_val[-1].numpy().squeeze(),'%s/ep%05d-valid-gt.tiff' % (itr_out_dir, ep))
         save2img(_vpred[-1].cpu().numpy().squeeze(), '%s/ep%05d-valid-pd.tiff' % (itr_out_dir, ep))
 
         save2img(imgs_tr[-1].numpy().squeeze(), '%s/ep%05d-train-gt.tiff' % (itr_out_dir, ep))
         save2img(pred[-1].detach().cpu().numpy().squeeze(),    '%s/ep%05d-train-pd.tiff' % (itr_out_dir, ep))
 
-        torch.save(model.module.state_dict(), "%s/mdl-ep%05d.pth" % (itr_out_dir, ep))
+        torch.save(enc_model.module.state_dict(), "%s/enc-ep%05d.pth" % (itr_out_dir, ep))
+        torch.save(CTx_dec.module.state_dict(), "%s/dec-ep%05d.pth" % (itr_out_dir, ep))
         with open(f'{itr_out_dir}/config.yaml', 'w') as fp:
             yaml.dump(params, fp)
 

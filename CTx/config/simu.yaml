@@ -20,12 +20,16 @@ train:
   ckp_steps: 10
 
 model:
-  enc_emb_dim: 256 # 
+  # enc_emb_dim: 256 # 
   dec_emb_dim: 256 # 
   out_dim: 256     # eq. to 16x16
   out_seqlen: 256  # eq. to number of patches
-  enc_nlayer: 8
+  # enc_nlayer: 8
   dec_nlayer: 8
-  enc_nhead: 16
+  # enc_nhead: 16
   dec_nhead: 16
   mask_ratio: 0.8
+  enc_weights: '../SinoTx/debug-itrOut/encoder-ep00200.pth'
+  enc_emb_dim: 512
+  enc_nhead: 16
+  enc_nlayer: 16

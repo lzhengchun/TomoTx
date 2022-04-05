@@ -4,8 +4,8 @@ dataset:
   std4norm: 19314.79102362229
   mean4norm: 23223.569339641806
   dkey: 'sino' # n, 180, 574
-  vh5:  '/homes/zhengchun.liu/TomoTx/SinoTx/dataset/ldp-valid.h5'
-  th5:  '/homes/zhengchun.liu/TomoTx/SinoTx/dataset/ldp-train.h5'
+  vh5:  '../dataset/ldp-valid.h5'
+  th5:  '../dataset/ldp-train.h5'
   load2ram: True
 
 train:

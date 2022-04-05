@@ -1,4 +1,3 @@
-#! /homes/zhengchun.liu/usr/miniconda3/envs/hvd/bin/python
 
 # torchrun --standalone --nnodes=1 --nproc_per_node=8  ./main-ddp.py -cfg=config/simu.yaml -expName=simu
 
@@ -104,6 +103,8 @@ def main(args):
                               mask=mask[-1].cpu().numpy(), fn='%s/ep%05d-train-pd.tiff' % (itr_out_dir, ep))
 
         torch.save(model.module.state_dict(), "%s/mdl-ep%05d.pth" % (itr_out_dir, ep))
+        torch.save(model.module.encoder.state_dict(), "%s/encoder-ep%05d.pth" % (itr_out_dir, ep))
+        torch.save(model.module.decoder.state_dict(), "%s/decoder-ep%05d.pth" % (itr_out_dir, ep))
         # torch.jit.save(torch.jit.trace(model, (imgs_tr[:1].cuda(), 0.7)), "%s/script-ep%05d.pth" % (itr_out_dir, ep))
         with open(f'{itr_out_dir}/config.yaml', 'w') as fp:
             yaml.dump(params, fp)

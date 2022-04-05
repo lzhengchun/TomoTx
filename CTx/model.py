@@ -1,30 +1,19 @@
-import torch 
+import torch, sys, os
 import numpy as np
 from transformer import Block
 
-class CTx(torch.nn.Module):
-    def __init__(self, in_seqlen, in_dim, params):
-        super().__init__()
-        self.in_seqlen  = in_seqlen
-        self.in_dim     = in_dim
+sys.path.insert(1, os.path.join(sys.path[0], '..'))
+from utils import init_weights, pos_embd_gen
 
+class CTx(torch.nn.Module):
+    def __init__(self, params):
+        super().__init__()
         mdl_cfg = params['model']
         self.enc_emb_dim = mdl_cfg['enc_emb_dim']
         self.dec_emb_dim = mdl_cfg['dec_emb_dim']
-        self.mask_ratio  = mdl_cfg['mask_ratio']
         self.out_dim     = mdl_cfg['out_dim']
         self.out_seqlen  = mdl_cfg['out_seqlen']
-        # encoder specifics
-        self.cls_token   = torch.nn.Parameter(torch.zeros(1, 1, self.enc_emb_dim), requires_grad=True)
-        self.enc_pos_emb = torch.nn.Parameter(torch.zeros(1, self.in_seqlen+1, self.enc_emb_dim), requires_grad=False)
-        self.enc_proj    = torch.nn.Conv2d(1, self.enc_emb_dim, kernel_size=(1, self.in_dim), bias=True)
-        
-        self.enc_blocks  = torch.nn.ModuleList([
-            Block(self.enc_emb_dim, mdl_cfg['enc_nhead'], mlp_ratio=4, qkv_bias=True, qk_scale=None, \
-                  norm_layer=torch.nn.LayerNorm) for i in range(mdl_cfg['enc_nlayer'])])
-        self.enc_norm = torch.nn.LayerNorm(self.enc_emb_dim)
-        
-        # decoder specifics
+
         self.dec_proj    = torch.nn.Conv2d(1, self.dec_emb_dim, kernel_size=(1, self.enc_emb_dim), bias=True)
         self.mask_token  = torch.nn.Parameter(torch.randn(1, 1, self.dec_emb_dim), requires_grad=True)
         self.dec_pos_emb = torch.nn.Parameter(torch.zeros(1, self.out_seqlen+1, self.dec_emb_dim), requires_grad=False)
@@ -36,104 +25,20 @@ class CTx(torch.nn.Module):
         
         self.dec_pred = torch.nn.Linear(self.dec_emb_dim, self.out_dim, bias=True) 
         self.initialize_weights()
-        
-    def pos_embd_gen(self, seqlen, emb_dim, cls_token):
-        pos_emb = np.zeros((seqlen, emb_dim), dtype=np.float32)
-        for _pos in range(seqlen):
-            for _c in range(emb_dim):
-                pos_emb[_pos, _c] = _pos / np.power(10000, 2 * (_c // 2) / emb_dim) 
-        
-        pos_emb[:, 0::2] = np.sin(pos_emb[:, 0::2])  # dim 2i
-        pos_emb[:, 1::2] = np.cos(pos_emb[:, 1::2])  # dim 2i+1
 
-        if cls_token:
-            pos_emb = np.concatenate([np.zeros([1, emb_dim]), pos_emb], axis=0)
-        return pos_emb
-    
     def initialize_weights(self):
         # initialize (and freeze) pos_embed by sin-cos embedding
-        enc_pos_emb = self.pos_embd_gen(self.in_seqlen, self.enc_emb_dim, cls_token=True)
-        self.enc_pos_emb.data.copy_(torch.from_numpy(enc_pos_emb).float().unsqueeze(0))
-
-        dec_pos_emb = self.pos_embd_gen(self.out_seqlen, self.dec_emb_dim, cls_token=True)
+        dec_pos_emb = pos_embd_gen(self.out_seqlen, self.dec_emb_dim, cls_token=True)
         self.dec_pos_emb.data.copy_(torch.from_numpy(dec_pos_emb).float().unsqueeze(0))
 
         # initialize proj like nn.Linear (instead of nn.Conv2d)
-        w = self.enc_proj.weight.data
-        torch.nn.init.xavier_uniform_(w.view([w.shape[0], -1]))
-
         w = self.dec_proj.weight.data
         torch.nn.init.xavier_uniform_(w.view([w.shape[0], -1]))
 
-        torch.nn.init.normal_(self.cls_token,  std=.02)
         torch.nn.init.normal_(self.mask_token, std=.02)
 
         # initialize nn.Linear and nn.LayerNorm
-        self.apply(self._init_weights)
-
-    def _init_weights(self, m):
-        if isinstance(m, torch.nn.Linear):
-            torch.nn.init.xavier_uniform_(m.weight)
-            if isinstance(m, torch.nn.Linear) and m.bias is not None:
-                torch.nn.init.constant_(m.bias, 0)
-                
-        elif isinstance(m, torch.nn.LayerNorm):
-            torch.nn.init.constant_(m.bias, 0)
-            torch.nn.init.constant_(m.weight, 1.0)
-
-    def random_masking(self, x):
-        N, L, D = x.shape  # batch, length, dim (a.k.a. BNC)
-        len_keep = int(L * (1 - self.mask_ratio))
-        
-        noise = torch.rand(N, L, device=x.device)  # noise in [0, 1]
-        
-        # sort noise for each sample
-        ids_shuffle = torch.argsort(noise, dim=1)  # ascend: small is keep, large is remove
-        ids_restore = torch.argsort(ids_shuffle, dim=1)
-
-        # keep the first subset
-        ids_keep = ids_shuffle[:, :len_keep]
-        x_masked = torch.gather(x, dim=1, index=ids_keep.unsqueeze(-1).repeat(1, 1, D))
-
-        # generate the binary mask: 0 is keep, 1 is remove
-        mask = torch.ones([N, L], device=x.device)
-        mask[:, :len_keep] = 0
-        # unshuffle to get the binary mask
-        mask = torch.gather(mask, dim=1, index=ids_restore)
-
-        return x_masked, mask, ids_restore
-    
-    def uniform_masking(self, x):
-        N, L, D = x.shape  # batch, length, dim
-
-        ids_keep = torch.linspace(0, L-1, L-round(self.mask_ratio*L), device=x.device).round().long()
-        x_masked = torch.gather(x, dim=1, index=ids_keep.repeat(N, 1).unsqueeze(-1).repeat(1, 1, D))
-        
-        mask = torch.ones(L, device=x.device)
-        mask.index_fill_(0, ids_keep, 0)
-        masked_ids  = torch.masked_select(torch.arange(0, L, device=x.device), mask==1)
-        ids_restore = torch.argsort(torch.cat([ids_keep, masked_ids]))
-        return x_masked, mask.repeat(N, 1), ids_restore.repeat(N, 1)
-
-    # mimic missing wedge, limitted-view
-    def missing_wedge_mask(self, x):
-        N, L, D = x.shape  # batch, length, dim
-        mw = round(self.mask_ratio*L)
-        
-        mseqs = torch.randint(low=0, high=L-mw, size=(N, ), device=x.device)
-        
-        ids_keep = torch.cat([torch.cat([torch.arange(0, mseqs[n], device=x.device), \
-                                        torch.arange(mseqs[n]+mw, L, device=x.device)])[None] for n in range(N)], axis=0)
-        masked_ids = torch.cat([torch.arange(mseqs[n], mseqs[n]+mw, device=x.device)[None] for n in range(N)], axis=0)
-
-        x_masked = torch.gather(x, dim=1, index=ids_keep.unsqueeze(-1).repeat(1, 1, D))
-
-        mask = torch.ones((N, L), device=x.device)
-        
-        mask[torch.arange(mask.size(0)).unsqueeze(1), ids_keep] = 0
-
-        ids_restore = torch.argsort(torch.cat([ids_keep, masked_ids], axis=1))
-        return x_masked, mask, ids_restore
+        self.apply(init_weights)
 
     def unpatchify(self, x):
         """
@@ -149,30 +54,7 @@ class CTx(torch.nn.Module):
         imgs = x.reshape(shape=(x.shape[0], 1, h * p, h * p))
         return imgs
 
-    # a more optimized implementation may be random masking before projection
-    # i.e., only project what needed, the need to be carefull when add position emb
-    def forward_enc(self, x):
-        _emb = self.enc_proj(x).flatten(2).transpose(1, 2)
-
-        # add pos embed w/o cls token
-        _tmp = _emb + self.enc_pos_emb[:, 1:, :]
-
-        # masking: length -> length * mask_ratio
-        _tmp, mask, ids_restore = self.random_masking(_tmp)
-        # _tmp, mask, ids_restore = self.uniform_masking(_tmp)
-
-        # append cls token
-        cls_token  = self.cls_token + self.enc_pos_emb[:, :1, :]
-        cls_tokens = cls_token.expand(_tmp.shape[0], -1, -1)
-        _tmp = torch.cat((cls_tokens, _tmp), dim=1)
-
-        for blk in self.enc_blocks:
-            _tmp = blk(_tmp)
-        _tmp = self.enc_norm(_tmp)
-        
-        return _tmp, mask, ids_restore
-
-    def forward_dec(self, x, ids_restore):
+    def forward(self, x, ids_restore):
         # embed tokens
         x = self.dec_proj(x[:,None]).flatten(2).transpose(1, 2)
 
@@ -200,16 +82,7 @@ class CTx(torch.nn.Module):
         # remove cls token
         x = x[:, 1:, :]
 
-        return x
+        recon = self.unpatchify(x)
 
-    def forward(self, sinos, mask_ratio=None):
-        if mask_ratio is not None:
-            self.mask_ratio = mask_ratio
-        latent, mask, ids_restore = self.forward_enc(sinos)
+        return recon
 
-        pred = self.forward_dec(latent, ids_restore)  # [N, L, D]
-
-        recon = self.unpatchify(pred)
-
-        return recon, mask
-    

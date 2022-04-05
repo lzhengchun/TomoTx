@@ -1,4 +1,3 @@
-#! /homes/zhengchun.liu/usr/miniconda3/envs/hvd/bin/python
 
 # torchrun --standalone --nnodes=1 --nproc_per_node=8  ./main-ddp.py -cfg=config/simu.yaml -expName=simu
 
