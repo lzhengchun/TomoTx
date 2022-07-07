@@ -1,8 +1,8 @@
 
 dataset:
   norm: True
-  std4norm: 19314.79102362229
-  mean4norm: 23223.569339641806
+  std4norm: 19325.2
+  mean4norm: 23095.4
   dkey: 'sino' # n, 180, 574
   vh5:  '../dataset/ldp-valid.h5'
   th5:  '../dataset/ldp-train.h5'
@@ -10,7 +10,7 @@ dataset:
 
 train:
   mbsz: 128
-  maxep: 200
+  maxep: 500
   lr: 0.001
   ckp_steps: 10
 

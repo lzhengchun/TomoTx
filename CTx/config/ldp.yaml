@@ -5,31 +5,31 @@
 dataset:
   inorm: 
     norm: True
-    mean4norm: 0.030294647
-    std4norm:  0.022565003
+    mean4norm: 23095.4
+    std4norm:  19325.2
   onorm: 
-    norm: True
-    mean4norm: 0.16435115
-    std4norm:  0.115162216
-  inpput_key: 'sino'
-  target_key: 'image'
-  vh5:  'dataset/ldp-valid.h5'
-  th5:  'dataset/ldp-train.h5'
+    norm: False
+    mean4norm: 0.06622547
+    std4norm:  0.10856451
+  inpput_key: 'sino'    # (n, 180, 576), 
+  target_key: 'image'   # (n, 576, 576)
+  vh5:  '../dataset/ldp-valid-resplit.h5'
+  th5:  '../dataset/ldp-train-resplit.h5'
   load2ram: True
 
 train:
   mbsz: 32
-  maxep: 500
-  lr: 0.001
-  ckp_steps: 10
+  maxep: 3000
+  lr: 0.000001
+  ckp_steps: 100
 
 model:
-  enc_emb_dim: 512
-  dec_emb_dim: 256
-  out_dim: 100
-  out_seqlen: 1296
-  enc_nlayer: 16
-  dec_nlayer: 16
+  enc_emb_dim: 1024
+  dec_emb_dim: 1024
+  out_dim: 324
+  out_seqlen: 1024
+  enc_nlayer: 24
+  dec_nlayer: 24
   enc_nhead: 16
   dec_nhead: 16
-  mask_ratio: 0.1
+  mask_ratio: 0.5

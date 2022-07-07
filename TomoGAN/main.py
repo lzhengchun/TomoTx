@@ -74,7 +74,8 @@ if __name__ == "__main__":
         shutil.rmtree(itr_out_dir)
     os.mkdir(itr_out_dir) # to save temp output
 
-    logging.basicConfig(filename=os.path.join(itr_out_dir, 'TomoGAN.log'), level=logging.DEBUG)
+    logging.basicConfig(filename=os.path.join(itr_out_dir, 'TomoGAN.log'), level=logging.DEBUG,\
+                        format='%(asctime)s %(levelname)s %(module)s: %(message)s')
     if args.verbose:
         logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
         

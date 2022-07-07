@@ -1,6 +1,8 @@
-import torch 
+import torch, sys
 import numpy as np
 from transformer import Block
+# sys.path.append('..')
+# from ViTx import Block
 
 class SVTx(torch.nn.Module):
     def __init__(self, seqlen, in_dim, params):
@@ -143,13 +145,13 @@ class SVTx(torch.nn.Module):
         pred: [N, L, W]
         mask: [N, L], 0 is keep, 1 is remove, 
         """
-        loss = (pred - target) ** 2
+        # loss = (pred - target) ** 2
 
         # loss = loss.mean(dim=-1)  # [N, L], mean loss per patch
         # loss = (loss * mask).sum() / mask.sum()  # mean loss on removed angles
 
-        loss = loss.mean()
-        
+        # loss = loss.mean()
+        loss = torch.nn.functional.smooth_l1_loss(pred, target)
         return loss
 
     def forward(self, imgs, mask_ratio=None):

@@ -35,7 +35,8 @@ def main(args):
         os.mkdir(itr_out_dir) # to save temp output
     torch.distributed.barrier()
 
-    logging.basicConfig(filename=f"{args.expName}-itrOut/DnTx.log", level=logging.DEBUG)
+    logging.basicConfig(filename=f"{args.expName}-itrOut/DnTx.log", level=logging.DEBUG,\
+                        format='%(asctime)s %(levelname)s %(module)s: %(message)s')
     if args.verbose:
         logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
 

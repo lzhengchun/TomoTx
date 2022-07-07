@@ -1,0 +1,24 @@
+# GPT-3 Large similiar
+dataset:
+  norm: True
+  std4norm: 19325.2
+  mean4norm: 23095.4
+  dkey: 'sino' # n, 180, 574
+  vh5:  '../dataset/ldp-valid-resplit.h5'
+  th5:  '../dataset/ldp-train-resplit.h5'
+  load2ram: True
+
+train:
+  mbsz: 64
+  maxep: 5000
+  lr: 0.000003
+  ckp_steps: 50
+
+model:
+  enc_emb_dim: 768
+  dec_emb_dim: 768
+  enc_nlayer: 12
+  dec_nlayer: 12
+  enc_nhead: 12
+  dec_nhead: 12 # dim should be divisible by num_heads
+  mask_ratio: 0.6

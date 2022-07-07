@@ -1,0 +1,24 @@
+# GPT-3 13B
+dataset:
+  norm: True
+  std4norm: 19325.2
+  mean4norm: 23095.4
+  dkey: 'sino' # n, 180, 574
+  vh5:  '../dataset/ldp-valid-resplit.h5'
+  th5:  '../dataset/ldp-train-resplit.h5'
+  load2ram: True
+
+train:
+  mbsz: 32
+  maxep: 5000
+  lr: 0.00001
+  ckp_steps: 50
+
+model:
+  enc_emb_dim: 5120
+  dec_emb_dim: 5120
+  enc_nlayer: 40
+  dec_nlayer: 40
+  enc_nhead: 40
+  dec_nhead: 40 # dim should be divisible by num_heads
+  mask_ratio: 0.6

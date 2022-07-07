@@ -33,7 +33,8 @@ def main(args):
         os.mkdir(itr_out_dir) # to save temp output
     torch.distributed.barrier()
 
-    logging.basicConfig(filename=f"{args.expName}-itrOut/SVTx.log", level=logging.DEBUG)
+    logging.basicConfig(filename=f"{args.expName}-itrOut/SVTx.log", level=logging.DEBUG,\
+                        format='%(asctime)s %(levelname)s %(module)s: %(message)s')
     if args.verbose:
         logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
 
@@ -61,8 +62,9 @@ def main(args):
     model = SVTx(seqlen=train_ds.seqlen, in_dim=train_ds.cdim, params=params).cuda()
     model = DDP(model, device_ids=[local_rank], output_device=local_rank, find_unused_parameters=False)
 
-    optimizer = torch.optim.AdamW(model.parameters(), lr=params['train']['lr'], betas=(0.9, 0.95))
-    lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=100, gamma=0.4, verbose=rank==0)
+    # optimizer = torch.optim.AdamW(model.parameters(), lr=params['train']['lr'], betas=(0.9, 0.95))
+    optimizer = torch.optim.SGD(model.parameters(), lr=params['train']['lr'])
+    # lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=100, gamma=0.4, verbose=rank==0)
 
     logging.info(f"rank {rank} Start training ...")
     for ep in range(1, params['train']['maxep']+1):
@@ -73,7 +75,7 @@ def main(args):
             loss.backward()
             optimizer.step()
 
-        lr_scheduler.step()
+        # lr_scheduler.step()
         if rank != world_size-1: continue
 
         time_e2e = time.time() - train_ep_tick
