@@ -5,6 +5,8 @@ Transformer for the analysis of Sinogram for Computed Tomography.
 This repo hosts code for the paper, `Masked Sinogram Model with Transformer for ill-Posed Computed Tomography Reconstruction: a Preliminary Study`, in prepration.
 It is not progressing fast because of short of hands, if one really wants to see the draft, it's [here](https://arxiv.org/abs/2209.01356).
 
+- ```dataset``` folder has the code and instruction to generate the synthesized used in the code/paper. 
+- ```SinoTx``` (i.e., the Masked Sinogram Model) and each application folder has a ```config``` folder that contains yaml configuration files for different experiment scenarios. One is expected to modify the configuration file only in most reproduce/evaluation cases.
 
 ## Citation
 
