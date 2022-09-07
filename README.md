@@ -6,7 +6,8 @@ This repo hosts code for the paper, `Masked Sinogram Model with Transformer for 
 It is not progressing fast because of short of hands, if one really wants to see the draft, it's [here](https://arxiv.org/abs/2209.01356).
 
 - ```dataset``` folder has the code and instruction to generate the synthesized used in the code/paper. 
-- ```SinoTx``` (i.e., the Masked Sinogram Model) and each application folder has a ```config``` folder that contains yaml configuration files for different experiment scenarios. One is expected to modify the configuration file only in most reproduce/evaluation cases.
+- ```SinoTx``` (i.e., the Masked Sinogram Model) and each application folder has a ```config``` folder that contains yaml configuration files for different experiment scenarios. 
+- One is expected to only modify the configuration file in most reproduce/evaluation cases. The default yaml files come from my own experiment setup, at least filenames to datasets need adjustment to run in your environment.
 
 ## Citation
 
