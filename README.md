@@ -2,8 +2,8 @@
 
 Transformer for the analysis of Sinogram for Computed Tomography.
 
-This repo hosts code for a paper, `Transformer is All You Need for Ill-Posed Computed Tomography Reconstruction: a preliminary study`, in prepration.
-It is not progress fast because of short of hands, if one really wants to see the draft, it's [here](https://www.overleaf.com/read/znyjrkpkxyrg) but please do not distribute publicly as it's a draft.
+This repo hosts code for the paper, `Masked Sinogram Model with Transformer for ill-Posed Computed Tomography Reconstruction: a Preliminary Study`, in prepration.
+It is not progressing fast because of short of hands, if one really wants to see the draft, it's [here](https://arxiv.org/abs/2209.01356).
 
 
 ## Citation
@@ -11,9 +11,14 @@ It is not progress fast because of short of hands, if one really wants to see th
 If you find my code useful for your research, consider cite:
 
 ```
-@misc{tomotx2022,
-  author = {Zhengchun Liu},
-  title = {TomoTx : Transformer for Computed Tomography},
-  howpublished = {\url{https://github.com/lzhengchun/TomoTx}},
-  year = {2022}
+@misc{https://doi.org/10.48550/arxiv.2209.01356,
+  doi = {10.48550/ARXIV.2209.01356},
+  url = {https://arxiv.org/abs/2209.01356},
+  author = {Liu, Zhengchun and Kettimuthu, Rajkumar and Foster, Ian},
+  title = {Masked Sinogram Model with Transformer for ill-Posed Computed Tomography Reconstruction: a Preliminary Study},
+  publisher = {arXiv},
+  year = {2022},
+  copyright = {arXiv.org perpetual, non-exclusive license}
 }
+```
+
